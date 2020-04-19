@@ -85,8 +85,8 @@ model.setObjective(15 * x1 + 18 * x2 + 30 * x3, GRB.MAXIMIZE)
 
 # relax=model.relax()
 # model.sos1= { 1:{x1:1,x2:2} }
-model.write("mupulp1.mps")
-model.write("mupulp1.lp")
+model.write("mypulp1.mps")
+model.write("mypulp1.lp")
 model.optimize()
 
 if model.Status == GRB.Status.OPTIMAL:

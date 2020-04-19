@@ -14,8 +14,8 @@ For more details, see the Gurobi HP http://www.gurobi.com/.
     model.addConstr(lhs=L1, sense="<=", rhs=60)
     model.addConstr(x1 + 2*x2 + x3 <= 60)
     model.setObjective(15*x1 + 18*x2 + 30*x3, GRB.MAXIMIZE)
-    model.write("mupulp1.mps")
-    model.write("mupulp1.lp")
+    model.write("mypulp1.mps")
+    model.write("mypulp1.lp")
     model.optimize()
     if model.Status == GRB.Status.OPTIMAL:
         print("Opt. Value =", model.ObjVal)
