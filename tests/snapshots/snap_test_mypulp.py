@@ -52,5 +52,3 @@ snapshots['test_sample 4'] = [
         -0.0
     )
 ]
-
-snapshots['test_option 1'] = 6491.707815518645
