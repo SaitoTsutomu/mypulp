@@ -8,37 +8,47 @@
 # Copyright:   (c)  Mikio Kubo 2013, 2014, 2015
 # -------------------------------------------------------------------------------
 
-import copy
 import math
 
-from pulp import *
+from pulp import lpDot  # noqa
+from pulp import (
+    LpAffineExpression,
+    LpConstraint,
+    LpConstraintEQ,
+    LpConstraintGE,
+    LpConstraintLE,
+    LpContinuous,
+    LpInteger,
+    LpProblem,
+    LpVariable,
+    lpSum,
+    sys,
+    value,
+)
 
 
 class GRB:
     class Status:
-        pass
+        OPTIMAL = 1
+        INFEASIBLE = 3
+        INF_OR_UNBD = 4
+        UNBOUNDED = 5
+        UNDEFINED = None
 
-    Status.OPTIMAL = 1
-    Status.INFEASIBLE = 3
-    Status.INF_OR_UNBD = 4
-    Status.UNBOUNDED = 5
-    Status.UNDEFINED = None
-    pass
+    CONTINUOUS = "C"
+    INTEGER = "I"
+    BINARY = "B"
+    SEMICONT = "S"
+    SEMIINT = "N"
 
+    MINIMIZE = 1
+    MAXIMIZE = -1
+    INFINITY = 1e100
+    MAXINT = 2147483647
 
-GRB.CONTINUOUS = "C"
-GRB.INTEGER = "I"
-GRB.BINARY = "B"
-GRB.SEMICONT = "S"
-GRB.SEMIINT = "N"
+    SOS_TYPE1 = 1
+    SOS_TYPE2 = 2
 
-GRB.MINIMIZE = 1
-GRB.MAXIMIZE = -1
-GRB.INFINITY = 1e100
-GRB.MAXINT = 2147483647
-
-GRB.SOS_TYPE1 = 1
-GRB.SOS_TYPE2 = 2
 
 quicksum = lpSum
 
@@ -55,7 +65,8 @@ else:
 
 
 def convex_comb_agg_log(model, var_list=[]):
-    """convex_comb_agg_log -- add piecewise relation with a logarithmic number of binary variables
+    """add piecewise relation with a logarithmic number of binary variables
+
     using the convex combination formulation -- non-disaggregated.
     Parameters:
         - model: a model where to include the SOS type 2
@@ -163,14 +174,12 @@ def multidict(dic):
 
 class Model(LpProblem):
     def __init__(self, name=""):
-        LpProblem.__init__(self, name)
+        super().__init__(name)
         self.var_id = 0
         self.constr_id = 0
 
     class Params:
-        pass
-
-    Params.OutputFlag = 0
+        OutputFlag = 0
 
     def addSOS(self, sos_type, var_list=[]):
         if sos_type == 1:
@@ -185,12 +194,12 @@ class Model(LpProblem):
         elif sos_type == 2:
             # assume that sum x_i <=1
             convex_comb_agg_log(self, var_list)
-        ##            dummy_list=[]
-        ##            for i in range(len(var_list)-1):
-        ##                dummy_list.append( self.addVar(vtype="B") )
-        ##            self.addConstr( quicksum( d for d in dummy_list) <=1 )
-        ##            for i in range(len(var_list)-1):
-        ##                self.addConstr( var_list[i]+var_list[i+1] <= dummy_list[i] )
+        #            dummy_list=[]
+        #            for i in range(len(var_list)-1):
+        #                dummy_list.append( self.addVar(vtype="B") )
+        #            self.addConstr( quicksum( d for d in dummy_list) <=1 )
+        #            for i in range(len(var_list)-1):
+        #                self.addConstr( var_list[i]+var_list[i+1] <= dummy_list[i] )
         else:
             print("SOS Type Error")
             raise TypeError
@@ -204,12 +213,10 @@ class Model(LpProblem):
             self.var_id += 1
             name = "x_{0}".format(self.var_id)
 
-        if type(lb) != type(0.0) and type(lb) != type(0):
-            print("lb must be float or integer")
-            raise TypeError
-        if type(ub) != type(0.0) and type(lb) != type(0):
-            print("ub must be float or integer")
-            raise TypeError
+        for i, s in [(lb, "lb"), (ub, "ub")]:
+            if not isinstance(i, float) and not isinstance(i, int):
+                print(f"{s} must be float or integer")
+                raise TypeError
 
         if vtype == "C":
             CAT = LpContinuous
@@ -259,7 +266,7 @@ class Model(LpProblem):
             self.constr_id += 1
             name = "c_{0}".format(self.constr_id)
 
-        if sense == None:
+        if sense is None:
             self += Constraint, name  # add a constraint
         else:
             if sense == "<" or sense == "<=":
@@ -279,14 +286,14 @@ class Model(LpProblem):
         self += obj, name
         self.sense = sense
 
-    def optimize(self):
+    def optimize(self, solver=None, **kwargs):
 
         try:
-            temp = self.objective.name
+            _ = self.objective.name
         except AttributeError:
             self.setObjective(0.0, GRB.MINIMIZE)
 
-        status = self.solve()
+        status = self.solve(solver, **kwargs)
         if status == 1:
             self.Status = GRB.Status.OPTIMAL
 
