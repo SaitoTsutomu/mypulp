@@ -35,6 +35,12 @@ class GRB:
         UNBOUNDED = 5
         UNDEFINED = None
 
+    OPTIMAL = 1
+    INFEASIBLE = 3
+    INF_OR_UNBD = 4
+    UNBOUNDED = 5
+    UNDEFINED = None
+
     CONTINUOUS = "C"
     INTEGER = "I"
     BINARY = "B"
@@ -297,11 +303,14 @@ class Model(LpProblem):
         if status == 1:
             self.Status = GRB.Status.OPTIMAL
 
-            self.ObjVal = value(self.objective)
+            self.ObjVal = self.objVal = value(self.objective)
             for v in self.variables():
                 v.VarName = v.name
                 v.X = v.varValue
                 v.RC = v.dj
+            
+            self.Runtime = -1.0  # dummy
+            self.IterCount = -1  # dummy
 
             for c in self.constraints:
                 self.constraints[c].Pi = self.constraints[c].pi
