@@ -18,7 +18,7 @@ pulp = "^2.8"
 python = "^3.11"
 
 [tool.poetry.dev-dependencies]
-pytest = "^8.2"
+pytest = "^9"
 pytest-snapshot = "^0"
 
 [build-system]
